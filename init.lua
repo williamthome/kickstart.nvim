@@ -667,6 +667,7 @@ require('lazy').setup({
             },
           },
         },
+        elp = {},
       }
 
       -- Ensure the servers and tools above are installed
