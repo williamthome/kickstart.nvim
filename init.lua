@@ -166,6 +166,9 @@ vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
+-- Select lines in visual mode and press J and K to move them up or down.
+vim.keymap.set('v', 'J', ":m '>+1<CR>gv=gv")
+vim.keymap.set('v', 'K', ":m '<-2<CR>gv=gv")
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
 -- is not what someone will guess without a bit more experience.
@@ -639,20 +642,20 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
+        -- html = {},
+        -- cssls = {},
+        -- ts_ls = {},
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
         -- rust_analyzer = {},
+        -- elp = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-
-        cssls = {},
-        ts_ls = {},
-
         lua_ls = {
           -- cmd = { ... },
           -- filetypes = { ... },
@@ -668,6 +671,17 @@ require('lazy').setup({
           },
         },
       }
+
+      -- Not mason servers
+      --
+      -- Django lsp
+      -- require('lspconfig').djlsp.setup {
+      --   cmd = { 'djlsp' },
+      --   init_options = {
+      --     djlsp = {},
+      --   },
+      --   capabilities = capabilities,
+      -- }
 
       -- Ensure the servers and tools above are installed
       --
@@ -699,15 +713,6 @@ require('lazy').setup({
             require('lspconfig')[server_name].setup(server)
           end,
         },
-      }
-
-      -- Django lsp
-      require('lspconfig').djlsp.setup {
-        cmd = { 'djlsp' },
-        init_options = {
-          djlsp = {},
-        },
-        capabilities = capabilities,
       }
     end,
   },
