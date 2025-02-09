@@ -231,6 +231,7 @@ vim.filetype.add {
   extension = {
     tpl = 'htmldjango',
     config = 'erlang',
+    src = 'erlang',
   },
 }
 
