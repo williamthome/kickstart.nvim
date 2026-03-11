@@ -1,0 +1,22 @@
+-- Arizona Framework language support for Neovim
+--
+-- Provides comprehensive syntax highlighting for Arizona (.herl) files:
+-- ✅ HTML syntax highlighting for static content
+-- ✅ Erlang syntax highlighting for dynamic blocks
+-- ✅ Language injection for full editor support
+-- ✅ Code navigation and semantic analysis
+--
+-- Configuration:
+-- • Parser configured in init.lua treesitter config
+-- • Filetype detection in after/ftdetect/arizona.lua
+-- • Queries symlinked from tree-sitter-arizona project
+-- • Automatic highlighting for {dynamic} and static content
+
+return {
+  -- Arizona language support is configured via:
+  -- 1. Tree-sitter parser registration in init.lua
+  -- 2. Filetype detection for .herl files
+  -- 3. Symlinked queries for syntax highlighting
+  -- 4. Language injection for HTML/Erlang content
+}
+

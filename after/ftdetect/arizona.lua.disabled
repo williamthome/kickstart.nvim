@@ -1,0 +1,11 @@
+-- Arizona filetype detection - associate .herl files with HTML for syntax highlighting
+--vim.filetype.add {
+--  extension = {
+--    herl = 'html', -- Treat .herl files as HTML for syntax highlighting
+--  },
+--  pattern = {
+--    ['.*%.herl'] = 'html',
+--  },
+--}
+--
+

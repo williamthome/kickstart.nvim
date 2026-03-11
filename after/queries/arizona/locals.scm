@@ -1,0 +1,1 @@
+/home/williamthome/git/arizona-framework/tree-sitter-arizona/queries/locals.scm
