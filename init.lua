@@ -1,3 +1,7 @@
+-- Remove this
+-- See https://github.com/neovim/neovim/issues/31675#issuecomment-2558405042
+vim.hl = vim.highlight
+
 --[[
 
 =====================================================================
@@ -147,6 +151,23 @@ vim.opt.splitbelow = true
 vim.opt.list = true
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 
+-- Highlight trailing whitespace
+vim.api.nvim_set_hl(0, 'ExtraWhitespace', { bg = '#5f3030' })
+vim.api.nvim_create_autocmd({ 'BufWinEnter', 'InsertLeave' }, {
+  callback = function()
+    if vim.bo.buftype == '' and vim.bo.filetype ~= 'neo-tree' then
+      vim.fn.matchadd('ExtraWhitespace', [[\s\+$]])
+    end
+  end,
+})
+vim.api.nvim_create_autocmd('InsertEnter', {
+  callback = function()
+    if vim.bo.buftype == '' and vim.bo.filetype ~= 'neo-tree' then
+      vim.fn.matchadd('ExtraWhitespace', [[\s\+\%#\@<!$]])
+    end
+  end,
+})
+
 -- Preview substitutions live, as you type!
 vim.opt.inccommand = 'split'
 
@@ -169,6 +190,30 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 -- Select lines in visual mode and press J and K to move them up or down.
 vim.keymap.set('v', 'J', ":m '>+1<CR>gv=gv")
 vim.keymap.set('v', 'K', ":m '<-2<CR>gv=gv")
+-- Copy current file path
+vim.keymap.set('n', '<leader>cp', function()
+  require('custom.utils').copy_path_picker(vim.fn.expand '%:p')
+end, { desc = '[C]opy [P]ath' })
+
+-- Resize window to a specific height/width
+vim.keymap.set('n', '<leader>wh', function()
+  vim.ui.input({ prompt = 'Resize height: ' }, function(input)
+    local n = tonumber(input)
+    if n then
+      vim.cmd('resize ' .. n)
+    end
+  end)
+end, { desc = '[W]indow [H]eight' })
+
+vim.keymap.set('n', '<leader>ww', function()
+  vim.ui.input({ prompt = 'Resize width: ' }, function(input)
+    local n = tonumber(input)
+    if n then
+      vim.cmd('vertical resize ' .. n)
+    end
+  end)
+end, { desc = '[W]indow [W]idth' })
+
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
 -- is not what someone will guess without a bit more experience.
@@ -214,6 +259,28 @@ vim.api.nvim_create_autocmd('DirChanged', {
     os.execute('printf "\\033]7;file://' .. hostname .. cwd .. '\\033\\\\"')
   end,
 })
+
+vim.api.nvim_create_autocmd('LspAttach', {
+  callback = function(args)
+    local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
+    require('lsp-format').on_attach(client, args.buf)
+  end,
+})
+
+-- Auto-remove trailing whitespace on save
+vim.api.nvim_create_autocmd('BufWritePre', {
+  pattern = '*',
+  callback = function()
+    local save_cursor = vim.fn.getpos '.'
+    vim.cmd [[%s/\s\+$//e]]
+    vim.fn.setpos('.', save_cursor)
+  end,
+})
+
+vim.cmd [[cabbrev wq execute "Format sync" <bar> wq]]
+
+-- Fix red background in terminal (e.g. Claude Code)
+vim.g.terminal_color_background = 'none'
 
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
@@ -359,7 +426,7 @@ require('lazy').setup({
   { -- Fuzzy Finder (files, lsp, etc)
     'nvim-telescope/telescope.nvim',
     event = 'VimEnter',
-    branch = '0.1.x',
+    branch = 'master',
     dependencies = {
       'nvim-lua/plenary.nvim',
       { -- If encountering errors, see telescope-fzf-native README for installation instructions
@@ -403,6 +470,17 @@ require('lazy').setup({
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
       local actions = require 'telescope.actions'
+      local action_state = require 'telescope.actions.state'
+
+      local copy_path = function(prompt_bufnr)
+        local entry = action_state.get_selected_entry()
+        if not entry then return end
+        local filepath = entry.path or entry.filename or entry.value
+        if not filepath then return end
+        actions.close(prompt_bufnr)
+        require('custom.utils').copy_path_picker(filepath)
+      end
+
       require('telescope').setup {
         -- You can put your default mappings / updates / etc. in here
         -- All the info you're looking for is in `:help telescope.setup()`
@@ -412,10 +490,56 @@ require('lazy').setup({
               ['<c-enter>'] = 'to_fuzzy_refine',
               ['<c-j>'] = actions.move_selection_next,
               ['<c-k>'] = actions.move_selection_previous,
+              ['<c-y>'] = copy_path,
+              ['<C-Down>'] = actions.cycle_history_next,
+              ['<C-Up>'] = actions.cycle_history_prev,
+              ['<c-p>'] = require('telescope.actions.layout').toggle_preview,
+              ['<c-f>'] = function(prompt_bufnr)
+                local picker = action_state.get_current_picker(prompt_bufnr)
+                local picker_title = picker.prompt_title
+                local current_query = picker:_get_prompt()
+                actions.close(prompt_bufnr)
+                local builtin = require 'telescope.builtin'
+                local pickers = require 'telescope.pickers'
+                local finders = require 'telescope.finders'
+                local conf = require('telescope.config').values
+                pickers
+                  .new({}, {
+                    prompt_title = 'Select directory',
+                    finder = finders.new_oneshot_job({ 'find', '.', '-type', 'd', '-not', '-path', '*/.*' }, {}),
+                    sorter = conf.generic_sorter {},
+                    attach_mappings = function(dir_bufnr, map)
+                      actions.select_default:replace(function()
+                        local entry = action_state.get_selected_entry()
+                        actions.close(dir_bufnr)
+                        if entry then
+                          local dir = entry[1]
+                          if picker_title:match '[Gg]rep' then
+                            builtin.live_grep { search_dirs = { dir }, default_text = current_query }
+                          else
+                            builtin.find_files { search_dirs = { dir }, default_text = current_query }
+                          end
+                        end
+                      end)
+                      return true
+                    end,
+                  })
+                  :find()
+              end,
+            },
+            n = {
+              ['Y'] = copy_path,
             },
           },
         },
-        pickers = {},
+        pickers = {
+          buffers = {
+            mappings = {
+              i = { ['<Del>'] = actions.delete_buffer },
+              n = { ['<Del>'] = actions.delete_buffer },
+            },
+          },
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -541,7 +665,21 @@ require('lazy').setup({
           -- Jump to the definition of the word under your cursor.
           --  This is where a variable was first declared, or where a function is defined, etc.
           --  To jump back, press <C-t>.
-          map('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
+          -- Jump to the definition of the word under your cursor.
+          --  For Erlang, also handles -include/-include_lib lines.
+          --  To jump back, press <C-t>.
+          if vim.bo[event.buf].filetype == 'erlang' then
+            map('gd', function()
+              local line = vim.api.nvim_get_current_line()
+              if line:match '%-include' then
+                require('custom.utils').goto_erlang_include()
+              else
+                require('telescope.builtin').lsp_definitions()
+              end
+            end, '[G]oto [D]efinition')
+          else
+            map('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
+          end
 
           -- Find references for the word under your cursor.
           map('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
@@ -632,6 +770,7 @@ require('lazy').setup({
       --  So, we create new capabilities with nvim cmp, and then broadcast that to the servers.
       local capabilities = vim.lsp.protocol.make_client_capabilities()
       capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
+      capabilities.textDocument.completion.completionItem.snippetSupport = true
 
       -- Enable the following language servers
       --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
@@ -643,14 +782,38 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        -- html = {},
-        -- cssls = {},
-        -- ts_ls = {},
-        -- clangd = {},
+        html = {},
+        cssls = {},
+        ts_ls = {},
+        jsonls = {},
+        eslint = {
+          on_attach = function(_, bufnr)
+            vim.api.nvim_create_autocmd('BufWritePre', {
+              buffer = bufnr,
+              command = 'EslintFixAll',
+            })
+          end,
+        },
+        prettier = {},
+        clangd = {},
         -- gopls = {},
         -- pyright = {},
         -- rust_analyzer = {},
-        -- elp = {},
+        elp = {},
+        elixirls = {
+          cmd = { '/home/williamthome/bin/elixir-ls/language_server.sh' },
+        },
+        tailwindcss = {
+          init_options = {
+            includeLanguages = {
+              elixir = 'html-eex',
+              eelixir = 'html-eex',
+              heex = 'html-eex',
+              arizona = 'herl',
+              herl = 'herl',
+            },
+          },
+        },
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -941,7 +1104,24 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'erlang',
+        'arizona',
+        'elixir',
+        'heex',
+        'eex',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
@@ -952,7 +1132,97 @@ require('lazy').setup({
         additional_vim_regex_highlighting = { 'ruby' },
       },
       indent = { enable = true, disable = { 'ruby' } },
+      incremental_selection = {
+        enable = true,
+      },
+      textobjects = {
+        enable = true,
+      },
+      injections = {
+        enable = true,
+      },
     },
+    ---@param opts TSConfig
+    config = function(_, opts)
+      -- local parser_config = require('nvim-treesitter.parsers').get_parser_configs()
+
+      -- Arizona parser configuration
+      --parser_config['arizona'] = {
+      --  install_info = {
+      --    url = '/home/williamthome/git/arizona-framework/tree-sitter-arizona',
+      --    files = { 'src/parser.c' },
+      --    branch = 'grammar-implementation',
+      --    generate_requires_npm = false,
+      --    requires_generate_from_grammar = false, -- Pre-built parser
+      --  },
+      --  filetype = 'arizona', -- Use for .herl files
+      --}
+
+      --vim.filetype.add {
+      --  pattern = {
+      --    ['.*.herl'] = 'arizona',
+      --  },
+      --}
+
+      --parser_config['erlang'] = {
+      --  install_info = {
+      --    url = 'https://github.com/WhatsApp/tree-sitter-erlang',
+      --    files = { 'src/scanner.c', 'src/parser.c' },
+      --    branch = 'main',
+      --    generate_requires_npm = false,
+      --    requires_generate_from_grammar = false,
+      --  },
+      --  filetype = 'erlang',
+      --}
+
+      -- vim.api.nvim_set_hl(0, '@comment.arizona', { link = '@comment.line.erlang' })
+      -- vim.api.nvim_set_hl(0, 'arizona.html', { link = 'html' })
+      -- vim.api.nvim_set_hl(0, 'arizona.erlang', { link = 'erlang' })
+      -- vim.api.nvim_set_hl(0, 'arizona.delimiter', { link = 'Delimiter' })
+
+      -- vim.api.nvim_set_hl(0, '@markup.raw.html.arizona', { link = 'Normal' })
+
+      -- Debug and fix markdown highlighting in Arizona files
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'arizona',
+        callback = function()
+          -- Debug: Print what's happening
+          -- print 'Arizona filetype detected - setting markdown highlights'
+
+          -- Force markdown highlighting to override Erlang
+          -- vim.api.nvim_set_hl(0, '@markup.heading.1.markdown', { fg = '#ff0000', bold = true, force = true })
+          -- vim.api.nvim_set_hl(0, '@markup.heading.2.markdown', { fg = '#ff0000', bold = true, force = true })
+          -- vim.api.nvim_set_hl(0, '@markup.heading.3.markdown', { fg = '#ff0000', bold = true, force = true })
+          -- vim.api.nvim_set_hl(0, '@markup.list.markdown', { fg = '#00ff00', force = true })
+          -- vim.api.nvim_set_hl(0, '@markup.strong.markdown', { fg = '#0000ff', bold = true, force = true })
+          -- vim.api.nvim_set_hl(0, '@markup.italic.markdown', { fg = '#ff00ff', italic = true, force = true })
+          -- vim.api.nvim_set_hl(0, '@markup.raw.block.markdown', { fg = '#ffff00', force = true })
+          -- vim.api.nvim_set_hl(0, '@markup.link.markdown', { fg = '#00ffff', underline = true, force = true })
+
+          -- -- Override string highlights specifically for markdown in arizona
+          -- vim.api.nvim_set_hl(0, '@string.markdown', { fg = '#ffffff', force = true })
+
+          -- Debug: check current parser
+          local buf = vim.api.nvim_get_current_buf()
+          local parser = vim.treesitter.get_parser(buf)
+          if parser then
+            print('Parser language:', parser:lang())
+            print('Parser children:', vim.inspect(parser:children()))
+          end
+        end,
+      })
+
+      -- Arizona parser registration - keep for future reference but not needed
+      -- since .herl files are treated as HTML at editor level
+      -- vim.treesitter.language.register('arizona', 'arizona')
+
+      -- vim.api.nvim_set_hl(0, 'herl.erlang', { link = 'ErlangKeyword' })
+      -- vim.api.nvim_set_hl(0, 'herl.html', { link = 'HtmlTag' })
+
+      require('nvim-treesitter.configs').setup(opts)
+      -- require(plug.main).setup(opts)
+    end,
+
     -- There are additional nvim-treesitter modules that you can use to interact
     -- with nvim-treesitter. You should go explore a few and see what interests you:
     --
