@@ -14,6 +14,14 @@ return {
     { '\\', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
   },
   opts = {
+    window = {
+      mappings = {
+        ['Y'] = function(state)
+          local node = state.tree:get_node()
+          require('custom.utils').copy_path_picker(node:get_id())
+        end,
+      },
+    },
     filesystem = {
       window = {
         mappings = {
