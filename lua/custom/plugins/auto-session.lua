@@ -14,6 +14,12 @@ return {
   ---@type AutoSession.Config
   opts = {
     suppressed_dirs = { '~/', '~/Downloads', '/' },
+    pre_save_cmds = {
+      'Neotree close',
+    },
+    post_restore_cmds = {
+      'Neotree reveal',
+    },
     -- log_level = 'debug',
     --
     -- ⚠️ This will only work if Telescope.nvim is installed

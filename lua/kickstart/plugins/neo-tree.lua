@@ -20,6 +20,7 @@ return {
           local node = state.tree:get_node()
           require('custom.utils').copy_path_picker(node:get_id())
         end,
+        ['<C-p>'] = { 'toggle_preview', config = { use_float = true, use_image_nvim = false } },
       },
     },
     filesystem = {
