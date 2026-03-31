@@ -110,6 +110,9 @@ vim.opt.number = true
 
 vim.opt.cursorline = true
 
+-- Show filename at the top of each window
+vim.opt.winbar = '%=%m %f'
+
 -- Thin window separators
 vim.opt.fillchars:append { horiz = '─', horizup = '┴', horizdown = '┬', vert = '│', vertleft = '┤', vertright = '├', verthoriz = '┼' }
 
@@ -479,9 +482,13 @@ require('lazy').setup({
 
       local copy_path = function(prompt_bufnr)
         local entry = action_state.get_selected_entry()
-        if not entry then return end
+        if not entry then
+          return
+        end
         local filepath = entry.path or entry.filename or entry.value
-        if not filepath then return end
+        if not filepath then
+          return
+        end
         actions.close(prompt_bufnr)
         require('custom.utils').copy_path_picker(filepath)
       end
@@ -547,12 +554,6 @@ require('lazy').setup({
               n = { ['<Del>'] = actions.delete_buffer },
             },
           },
-          find_files = {
-            hidden = true,
-          },
-          live_grep = {
-            additional_args = { '--hidden' },
-          },
         },
         extensions = {
           ['ui-select'] = {
@@ -569,10 +570,14 @@ require('lazy').setup({
       local builtin = require 'telescope.builtin'
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>sf', function()
+        builtin.find_files { hidden = require('custom.utils').show_hidden }
+      end, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
-      vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
+      vim.keymap.set('n', '<leader>sg', function()
+        builtin.live_grep { additional_args = require('custom.utils').show_hidden and { '--hidden' } or {} }
+      end, { desc = '[S]earch by [G]rep' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>sj', builtin.jumplist, { desc = '[S]earch [J]umplist' })

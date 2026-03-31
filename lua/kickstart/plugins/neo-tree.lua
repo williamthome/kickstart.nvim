@@ -21,12 +21,25 @@ return {
           require('custom.utils').copy_path_picker(node:get_id())
         end,
         ['<C-p>'] = { 'toggle_preview', config = { use_float = true, use_image_nvim = false } },
+        ['O'] = function(state)
+          local node = state.tree:get_node()
+          local path = node.type == 'directory' and node:get_id() or vim.fn.fnamemodify(node:get_id(), ':h')
+          vim.fn.jobstart({ 'xdg-open', path }, { detach = true })
+        end,
       },
     },
     filesystem = {
       window = {
         mappings = {
           ['\\'] = 'close_window',
+          ['H'] = function(state)
+            -- Toggle hidden files and sync with telescope
+            local utils = require 'custom.utils'
+            utils.show_hidden = not utils.show_hidden
+            state.filtered_items = state.filtered_items or {}
+            state.filtered_items.visible = utils.show_hidden
+            require('neo-tree.sources.filesystem.commands').toggle_hidden(state)
+          end,
         },
       },
     },

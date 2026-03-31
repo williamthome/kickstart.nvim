@@ -1,5 +1,8 @@
 local M = {}
 
+-- Shared state for hidden files visibility
+M.show_hidden = true
+
 --- Show a picker to copy a file path in various formats to the clipboard.
 ---@param filepath string
 M.copy_path_picker = function(filepath)
