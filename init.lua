@@ -821,16 +821,14 @@ require('lazy').setup({
         -- pyright = {},
         -- rust_analyzer = {},
         elp = {},
-        elixirls = {
-          cmd = { '/home/williamthome/bin/elixir-ls/language_server.sh' },
-        },
+        elixirls = {},
         tailwindcss = {
           init_options = {
             includeLanguages = {
               elixir = 'html-eex',
               eelixir = 'html-eex',
               heex = 'html-eex',
-              arizona = 'herl',
+              -- arizona = 'herl',
               herl = 'herl',
             },
           },
@@ -1138,7 +1136,7 @@ require('lazy').setup({
         'vim',
         'vimdoc',
         'erlang',
-        'arizona',
+        -- 'arizona',
         'elixir',
         'heex',
         'eex',
@@ -1203,35 +1201,35 @@ require('lazy').setup({
 
       -- vim.api.nvim_set_hl(0, '@markup.raw.html.arizona', { link = 'Normal' })
 
-      -- Debug and fix markdown highlighting in Arizona files
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'arizona',
-        callback = function()
-          -- Debug: Print what's happening
-          -- print 'Arizona filetype detected - setting markdown highlights'
-
-          -- Force markdown highlighting to override Erlang
-          -- vim.api.nvim_set_hl(0, '@markup.heading.1.markdown', { fg = '#ff0000', bold = true, force = true })
-          -- vim.api.nvim_set_hl(0, '@markup.heading.2.markdown', { fg = '#ff0000', bold = true, force = true })
-          -- vim.api.nvim_set_hl(0, '@markup.heading.3.markdown', { fg = '#ff0000', bold = true, force = true })
-          -- vim.api.nvim_set_hl(0, '@markup.list.markdown', { fg = '#00ff00', force = true })
-          -- vim.api.nvim_set_hl(0, '@markup.strong.markdown', { fg = '#0000ff', bold = true, force = true })
-          -- vim.api.nvim_set_hl(0, '@markup.italic.markdown', { fg = '#ff00ff', italic = true, force = true })
-          -- vim.api.nvim_set_hl(0, '@markup.raw.block.markdown', { fg = '#ffff00', force = true })
-          -- vim.api.nvim_set_hl(0, '@markup.link.markdown', { fg = '#00ffff', underline = true, force = true })
-
-          -- -- Override string highlights specifically for markdown in arizona
-          -- vim.api.nvim_set_hl(0, '@string.markdown', { fg = '#ffffff', force = true })
-
-          -- Debug: check current parser
-          local buf = vim.api.nvim_get_current_buf()
-          local parser = vim.treesitter.get_parser(buf)
-          if parser then
-            print('Parser language:', parser:lang())
-            print('Parser children:', vim.inspect(parser:children()))
-          end
-        end,
-      })
+      -- -- Debug and fix markdown highlighting in Arizona files
+      -- vim.api.nvim_create_autocmd('FileType', {
+      --   pattern = 'arizona',
+      --   callback = function()
+      --     -- Debug: Print what's happening
+      --     -- print 'Arizona filetype detected - setting markdown highlights'
+      --
+      --     -- Force markdown highlighting to override Erlang
+      --     -- vim.api.nvim_set_hl(0, '@markup.heading.1.markdown', { fg = '#ff0000', bold = true, force = true })
+      --     -- vim.api.nvim_set_hl(0, '@markup.heading.2.markdown', { fg = '#ff0000', bold = true, force = true })
+      --     -- vim.api.nvim_set_hl(0, '@markup.heading.3.markdown', { fg = '#ff0000', bold = true, force = true })
+      --     -- vim.api.nvim_set_hl(0, '@markup.list.markdown', { fg = '#00ff00', force = true })
+      --     -- vim.api.nvim_set_hl(0, '@markup.strong.markdown', { fg = '#0000ff', bold = true, force = true })
+      --     -- vim.api.nvim_set_hl(0, '@markup.italic.markdown', { fg = '#ff00ff', italic = true, force = true })
+      --     -- vim.api.nvim_set_hl(0, '@markup.raw.block.markdown', { fg = '#ffff00', force = true })
+      --     -- vim.api.nvim_set_hl(0, '@markup.link.markdown', { fg = '#00ffff', underline = true, force = true })
+      --
+      --     -- -- Override string highlights specifically for markdown in arizona
+      --     -- vim.api.nvim_set_hl(0, '@string.markdown', { fg = '#ffffff', force = true })
+      --
+      --     -- Debug: check current parser
+      --     local buf = vim.api.nvim_get_current_buf()
+      --     local parser = vim.treesitter.get_parser(buf)
+      --     if parser then
+      --       print('Parser language:', parser:lang())
+      --       print('Parser children:', vim.inspect(parser:children()))
+      --     end
+      --   end,
+      -- })
 
       -- Arizona parser registration - keep for future reference but not needed
       -- since .herl files are treated as HTML at editor level

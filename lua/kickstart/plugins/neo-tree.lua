@@ -23,7 +23,7 @@ return {
         ['<C-p>'] = { 'toggle_preview', config = { use_float = true, use_image_nvim = false } },
         ['O'] = function(state)
           local node = state.tree:get_node()
-          local path = node.type == 'directory' and node:get_id() or vim.fn.fnamemodify(node:get_id(), ':h')
+          local path = node:get_id()
           vim.fn.jobstart({ 'xdg-open', path }, { detach = true })
         end,
       },
