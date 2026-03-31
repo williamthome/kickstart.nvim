@@ -38,7 +38,12 @@ return {
     vim.keymap.set('n', '<leader>bx', '<cmd>BufferLinePickClose<CR>', { desc = '[B]uffer pick and close' })
     vim.keymap.set('n', '<leader>x', function()
       local buf = vim.api.nvim_get_current_buf()
-      vim.cmd 'BufferLineCyclePrev'
+      local alt = vim.fn.bufnr '#'
+      if alt ~= -1 and alt ~= buf and vim.api.nvim_buf_is_valid(alt) and vim.bo[alt].buflisted then
+        vim.cmd('buffer ' .. alt)
+      else
+        vim.cmd 'BufferLineCyclePrev'
+      end
       if vim.api.nvim_buf_is_valid(buf) then
         vim.cmd('bdelete! ' .. buf)
       end
