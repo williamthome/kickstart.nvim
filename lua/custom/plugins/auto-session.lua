@@ -16,6 +16,7 @@ return {
     suppressed_dirs = { '~/', '~/Downloads', '/' },
     pre_save_cmds = {
       'Neotree close',
+      'AerialClose',
     },
     post_restore_cmds = {
       'Neotree reveal',
