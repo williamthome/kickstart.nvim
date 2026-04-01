@@ -19,7 +19,7 @@ return {
       'AerialClose',
     },
     post_restore_cmds = {
-      'Neotree reveal',
+      -- 'Neotree reveal',
     },
     -- log_level = 'debug',
     --

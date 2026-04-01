@@ -11,7 +11,7 @@ return {
   },
   opts = {
     layout = {
-      default_direction = 'right',
+      default_direction = 'left',
       min_width = 30,
     },
     attach_mode = 'global',
