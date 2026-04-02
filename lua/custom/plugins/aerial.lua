@@ -22,7 +22,7 @@ return {
     show_guides = true,
     close_automatic_events = {},
     post_jump_cmd = 'normal! zz',
-    open_automatic = true,
+    open_automatic = false,
     on_first_symbols = function(bufnr)
       require('aerial').tree_set_collapse_level(bufnr, 0)
     end,
